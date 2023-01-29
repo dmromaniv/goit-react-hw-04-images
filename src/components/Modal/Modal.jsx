@@ -4,16 +4,19 @@ import { disableScroll, enableScroll } from 'utils/utils';
 import s from './Modal.module.css';
 
 export const Modal = ({ imgUrl, onCloseModal }) => {
-  const closeModalByEscape = useCallback(e => {
-    if (e.code === 'Escape') {
-      onCloseModal();
-    }
-  }, []);
+  const closeModalByEscape = useCallback(
+    e => {
+      if (e.code === 'Escape') {
+        onCloseModal();
+      }
+    },
+    [onCloseModal]
+  );
 
   useEffect(() => {
     disableScroll();
     document.addEventListener('keydown', closeModalByEscape);
-  }, []);
+  });
 
   useEffect(() => {
     return () => {
