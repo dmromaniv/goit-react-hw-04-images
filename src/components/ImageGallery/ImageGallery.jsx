@@ -1,40 +1,29 @@
-import { Component } from 'react';
+import { useState } from 'react';
 
 import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
 import { Modal } from 'components/Modal/Modal';
 
 import s from './ImageGallery.module.css';
 
-export class ImageGallery extends Component {
-  state = {
-    modalData: null,
+export const ImageGallery = ({ imagesGalleryRef, images }) => {
+  const [modalData, setModalData] = useState(null);
+
+  const openModal = imgSrc => {
+    setModalData(imgSrc);
   };
 
-  openModal = imgSrc => {
-    this.setState({ modalData: imgSrc });
+  const closeModal = () => {
+    setModalData(null);
   };
 
-  closeModal = () => {
-    this.setState({ modalData: null });
-  };
-
-  render() {
-    const { imagesGalleryRef, images } = this.props;
-    return (
-      <>
-        <ul ref={imagesGalleryRef} className={s.imageGallery}>
-          {images.map((image, index) => (
-            <ImageGalleryItem
-              key={image.id}
-              {...image}
-              onOpenModal={this.openModal}
-            />
-          ))}
-        </ul>
-        {this.state.modalData && (
-          <Modal imgUrl={this.state.modalData} onCloseModal={this.closeModal} />
-        )}
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <ul ref={imagesGalleryRef} className={s.imageGallery}>
+        {images.map((image, index) => (
+          <ImageGalleryItem key={image.id} {...image} onOpenModal={openModal} />
+        ))}
+      </ul>
+      {modalData && <Modal imgUrl={modalData} onCloseModal={closeModal} />}
+    </>
+  );
+};

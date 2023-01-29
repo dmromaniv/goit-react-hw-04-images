@@ -1,52 +1,46 @@
-import { Component } from 'react';
+import { useState, memo } from 'react';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 import s from './Searchbar.module.css';
 
-export class Searchbar extends Component {
-  state = {
-    searchQuery: '',
-  };
+export const Searchbar = memo(({ addSearchQuery }) => {
+  const [searchQuery, setSearchQuery] = useState('');
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
 
-    const { searchQuery } = this.state;
-
     if (searchQuery) {
-      this.props.onSubmit(searchQuery);
-      this.setState({ searchQuery: '' });
+      addSearchQuery(searchQuery);
+      setSearchQuery('');
     } else {
       Notify.info('Please enter any search query');
     }
   };
 
-  handleChange = event => {
+  const handleChange = event => {
     const searchQuery = event.target.value.trim();
     if (searchQuery.length > 0) {
-      this.setState({ searchQuery: event.target.value });
+      setSearchQuery(searchQuery);
     }
   };
 
-  render() {
-    return (
-      <header className={s.searchbar}>
-        <form className={s.searchForm} onSubmit={this.handleSubmit}>
-          <button type="submit" className={s.searchFormButton}>
-            <span className={s.buttonLabel}>Search</span>
-          </button>
+  return (
+    <header className={s.searchbar}>
+      <form className={s.searchForm} onSubmit={handleSubmit}>
+        <button type="submit" className={s.searchFormButton}>
+          <span className={s.buttonLabel}>Search</span>
+        </button>
 
-          <input
-            className={s.input}
-            value={this.state.searchQuery}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            onChange={this.handleChange}
-          />
-        </form>
-      </header>
-    );
-  }
-}
+        <input
+          className={s.input}
+          value={searchQuery}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          onChange={handleChange}
+        />
+      </form>
+    </header>
+  );
+});

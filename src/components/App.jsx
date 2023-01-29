@@ -1,4 +1,4 @@
-import { Component, createRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
@@ -7,86 +7,73 @@ import { Loader } from './Loader/Loader';
 
 import { getImagesBySearchQuery } from 'services/getImages';
 
-export class App extends Component {
-  state = {
-    searchQuery: '',
-    currentPage: 1,
-    images: [],
-    totalImages: null,
-    isLoading: false,
+export const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [totalImages, setTotalImages] = useState(null);
+  const [isLoading, setLoadingStatus] = useState(false);
+
+  const isFirstPageLoading = useRef(true);
+  const imagesGalleryRef = useRef(null);
+
+  useEffect(() => {
+    console.log('status', isFirstPageLoading.current);
+    console.log('query', searchQuery);
+    if (!isFirstPageLoading.current) {
+      console.log('Get Images');
+      (async () => {
+        try {
+          setLoadingStatus(true);
+          const { hits, total } = await getImagesBySearchQuery(
+            searchQuery,
+            currentPage
+          );
+          setImages(prevImages =>
+            currentPage === 1 ? [...hits] : [...prevImages, ...hits]
+          );
+          setTotalImages(total);
+
+          if (currentPage > 1) {
+            console.log(imagesGalleryRef.current.scrollHeight);
+            window.scrollTo({
+              top: imagesGalleryRef.current.scrollHeight,
+              behavior: 'smooth',
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        } finally {
+          setLoadingStatus(false);
+        }
+      })();
+    }
+  }, [searchQuery, currentPage]);
+
+  useEffect(() => {
+    isFirstPageLoading.current = false;
+  }, []);
+
+  const addSearchQuery = useCallback(searchQuery => {
+    setSearchQuery(searchQuery);
+    setCurrentPage(1);
+  }, []);
+
+  const updatePage = () => {
+    setCurrentPage(prevPage => prevPage + 1);
   };
 
-  imagesGalleryRef = createRef();
+  return (
+    <>
+      <Searchbar addSearchQuery={addSearchQuery} />
 
-  getSnapshotBeforeUpdate(_, prevState) {
-    if (prevState.images.length < this.state.images.length) {
-      return this.imagesGalleryRef.current.scrollHeight;
-    }
-    return null;
-  }
+      <ImageGallery images={images} imagesGalleryRef={imagesGalleryRef} />
 
-  async componentDidUpdate(_, prevState, snapshot) {
-    if (
-      prevState.searchQuery !== this.state.searchQuery ||
-      (prevState.currentPage !== this.state.currentPage &&
-        this.state.currentPage !== 1)
-    ) {
-      await this.getImages();
-    }
+      {isLoading && <Loader />}
 
-    if (snapshot) {
-      window.scrollTo({ top: snapshot, behavior: 'smooth' });
-    }
-  }
-
-  getImages = async () => {
-    const { currentPage, searchQuery } = this.state;
-    try {
-      this.setState({ isLoading: true });
-      const { hits, total } = await getImagesBySearchQuery(
-        searchQuery,
-        currentPage
-      );
-      this.setState(prevState => {
-        return currentPage === 1
-          ? { images: [...hits], totalImages: total }
-          : {
-              images: [...prevState.images, ...hits],
-            };
-      });
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.setState({ isLoading: false });
-    }
-  };
-
-  setSearchQuery = searchQuery => {
-    this.setState({ searchQuery, currentPage: 1 });
-  };
-
-  updatePage = () => {
-    this.setState(prevState => ({ currentPage: prevState.currentPage + 1 }));
-  };
-
-  render() {
-    const { totalImages, images, isLoading } = this.state;
-
-    return (
-      <>
-        <Searchbar onSubmit={this.setSearchQuery} />
-
-        <ImageGallery
-          images={images}
-          imagesGalleryRef={this.imagesGalleryRef}
-        />
-
-        {isLoading && <Loader />}
-
-        {images.length > 0 && images.length < totalImages && (
-          <Button onClick={this.updatePage} />
-        )}
-      </>
-    );
-  }
-}
+      {images.length > 0 && images.length < totalImages && (
+        <Button onClick={updatePage} />
+      )}
+    </>
+  );
+};
